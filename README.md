@@ -15,7 +15,8 @@ Supported scripts can register themselves in the menu and can then be enabled or
 
 Tested on & Requirements: Windows 11, Chrome, Jellyfin Web 10.10.7, JavaScript Injector.
 
-<img src="Screenshot.png" width="300">
+<img src="Screenshot-Main.png" width="300">
+<img src="Screenshot-Sub.png" width="300">
 
 ---
 
