@@ -15,7 +15,7 @@ Supported script addons:
 - [Download Button](https://github.com/chrissix666/Jellyfin-VideoOSD-Download-Button)
 - [Screenshot Button](https://github.com/chrissix666/Jellyfin-VideoOSD-Screenshot-Button)
 
-Supported scripts can register themselves in the menu and can then be enabled or disabled without editing code or reloading Jellyfin Web.
+Supported scripts addons can register themselves in the menu and can then be enabled or disabled without editing code or reloading Jellyfin Web.
 
 Tested on & Requirements: Windows 11, Chrome, Jellyfin Web 10.10.7, JavaScript Injector.
 
@@ -27,10 +27,10 @@ Tested on & Requirements: Windows 11, Chrome, Jellyfin Web 10.10.7, JavaScript I
 ## Features
 
 - Adds a **Customs** submenu to the Jellyfin playback settings menu.
-- Shows supported script mods in one compact on/off list.
-- Uses checkmarks to show which mods are currently enabled.
+- Shows supported script addons in one compact on/off list.
+- Uses checkmarks to show which script addons are currently enabled.
 - Stores addon states locally in the browser.
-- Compatible scripts can register automatically through the shared Custom Menu integration.
+- Compatible addon scripts can register automatically through the shared Custom Menu integration.
 - Uses Jellyfin-like ActionSheet styling for a native-looking popup.
 - Works fully client-side, without backend changes.
 
@@ -39,17 +39,17 @@ Tested on & Requirements: Windows 11, Chrome, Jellyfin Web 10.10.7, JavaScript I
 ## What This Script Does
 
 The Custom On/Off Menu is not a visual effect or playback feature by itself.  
-It is a small control layer for other VideoOSD mods.
+It is a small control layer for other VideoOSD script addons.
 
-Instead of editing scripts manually whenever you want to hide or show a button, artwork overlay, or other VideoOSD element, you can toggle supported mods directly from the playback settings menu.
+Instead of editing script addons manually whenever you want to hide or show a button, artwork overlay, or other VideoOSD element, you can toggle supported script addons directly from the playback settings menu.
 
-This is useful when you use multiple VideoOSD mods together and want a clean way to quickly switch them on or off depending on the situation.
+This is useful when you use multiple VideoOSD script addons together and want a clean way to quickly switch them on or off depending on the situation.
 
 ---
 
 ## Supported Addons
 
-This menu is designed for VideoOSD scripts that include Custom Menu integration.
+This menu is designed for VideoOSD script addons that include Custom Menu integration.
 
 Currently supported:
 
@@ -68,7 +68,7 @@ Currently supported:
 - **Screenshot Button**  
   Enables or disables the screenshot button.
 
-If no compatible addon is installed or registered, the menu shows a small empty-state message.
+If no compatible script addon is installed or registered, the menu shows a small empty-state message.
 
 ---
 
@@ -77,9 +77,9 @@ If no compatible addon is installed or registered, the menu shows a small empty-
 1. If not already present, install a JavaScript injector plugin or userscript manager  
    (Jellyfin JavaScript Injector, Tampermonkey, Violentmonkey, or similar).
 
-2. Paste the content of the Custom On/Off Menu script into the injector.
+2. Paste the content of the Custom On/Off Menu script addon into the injector.
 
-4. Paste or enable the supported addon scripts.
+4. Paste or enable the supported script addons you want to use.
 
 5. Save and reload Jellyfin Web.
 
@@ -89,15 +89,15 @@ If no compatible addon is installed or registered, the menu shows a small empty-
 
 ## Behavior
 
-The script creates a shared Custom Menu integration for supported VideoOSD addons.
+The script creates a shared Custom Menu integration for supported VideoOSD script addons.
 
-Compatible addons can register themselves with the menu.  
-Each registered addon appears as a toggle entry in the submenu.
+Compatible script addons can register themselves with the menu.  
+Each registered script addons appears as a toggle entry in the submenu.
 
-When an addon is enabled or disabled:
+When a script addon is enabled or disabled:
 
 - The state is saved locally in the browser.
-- The addon’s own enable or disable behavior is triggered.
+- The script addons own enable or disable behavior is triggered.
 - The checkmark updates immediately.
 - No Jellyfin server setting is changed.
 - No backend interaction is required.
@@ -106,7 +106,7 @@ When an addon is enabled or disabled:
 
 ## Storage
 
-Addon states are saved locally in the browser.
+Script addons states are saved locally in the browser.
 
 This means the settings are browser-local and user-local.  
 Clearing browser storage may reset the menu states.
@@ -115,11 +115,11 @@ Clearing browser storage may reset the menu states.
 
 ## Notes and Limitations
 
-- This menu only controls scripts that support this menu integration.
+- This menu only controls script addons that support this menu integration.
 - It does not modify Jellyfin server settings.
-- It does not install or remove addons.
-- It only enables or disables already loaded compatible scripts.
-- If a compatible addon is used without this menu integration, it can still run standalone as always on.
+- It does not install or remove addon scripts.
+- It only enables or disables already loaded compatible script addons.
+- If a compatible script addon is used without this menu integration, it can still run standalone as always on.
 
 ---
 
