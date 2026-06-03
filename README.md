@@ -119,7 +119,6 @@ Clearing browser storage may reset the menu states.
 - It does not modify Jellyfin server settings.
 - It does not install or remove addons.
 - It only enables or disables already loaded compatible scripts.
-- Load order can matter. For best results, load the Custom On/Off Menu before the addon scripts.
 - If a compatible addon is used without this menu, it can still run standalone if the addon script supports fallback behavior.
 
 ---
