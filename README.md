@@ -5,7 +5,7 @@ It adds a customizable on/off submenu to the **Jellyfin Web VideoOSD**, letting 
 
 Supported mods:
 
-- [Artwork OSD](https://github.com/chrissix666/Jellyfin-VideoOSD-Artwork-Display)
+- [Artwork on OSD](https://github.com/chrissix666/Jellyfin-VideoOSD-Artwork-Display)
 - [Speed Buttons](https://github.com/chrissix666/Jellyfin-VideoOSD-CustomPlaybackSpeed-Buttons)
 - [FrameByFrame Buttons](https://github.com/chrissix666/Jellyfin-VideoOSD-FrameByFrame-Buttons)
 - [Download Button](https://github.com/chrissix666/Jellyfin-VideoOSD-Download-Button)
