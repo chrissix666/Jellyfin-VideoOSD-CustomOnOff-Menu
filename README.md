@@ -26,7 +26,7 @@ Tested on & Requirements: Windows 11, Chrome, Jellyfin Web 10.10.7, JavaScript I
 
 ## Features
 
-- Adds a **Customs** submenu to the Jellyfin VideoOSD menu.
+- Adds a **Customs** submenu to the Jellyfin playback settings menu.
 - Shows supported script mods in one compact on/off list.
 - Uses checkmarks to show which mods are currently enabled.
 - Stores addon states locally in the browser.
