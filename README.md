@@ -115,7 +115,7 @@ Clearing browser storage may reset the menu states.
 
 ## Notes and Limitations
 
-- This menu only controls scripts that support the Custom Menu integration.
+- This menu only controls scripts that support this menu integration.
 - It does not modify Jellyfin server settings.
 - It does not install or remove addons.
 - It only enables or disables already loaded compatible scripts.
