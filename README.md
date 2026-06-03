@@ -63,10 +63,10 @@ Currently supported:
   Enables or disables frame stepping buttons for precise paused playback navigation.
 
 - **Download Button**  
-  Enables or disables the VideoOSD download button.
+  Enables or disables the download button.
 
 - **Screenshot Button**  
-  Enables or disables the VideoOSD screenshot button.
+  Enables or disables the screenshot button.
 
 If no compatible addon is installed or registered, the menu shows a small empty-state message.
 
