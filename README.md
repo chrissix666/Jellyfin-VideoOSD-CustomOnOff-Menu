@@ -1,3 +1,7 @@
+Overview of all my Jellyfin Web Video OSD projects: [Jellyfin-VideoOSD-Projects-Overview](https://github.com/chrissix666/Jellyfin-VideoOSD-Projects-Overview)
+
+---
+
 # Jellyfin VideoOSD Custom On/Off Menu
 
 This script is the quick-switching control hub for my **Jellyfin VideoOSD mods**.  
