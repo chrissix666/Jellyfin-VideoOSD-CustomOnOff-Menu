@@ -41,9 +41,9 @@ Tested on & Requirements: Windows 11, Chrome, Jellyfin Web 10.10.7, JavaScript I
 The Custom On/Off Menu is not a visual effect or playback feature by itself.  
 It is a small control layer for other VideoOSD mods.
 
-Instead of editing scripts manually whenever you want to hide or show a button, artwork overlay, or other OSD element, you can toggle supported mods directly from the VideoOSD menu.
+Instead of editing scripts manually whenever you want to hide or show a button, artwork overlay, or other VideoOSD element, you can toggle supported mods directly from the playback settings menu.
 
-This is useful when you use multiple OSD mods together and want a clean way to quickly switch them on or off depending on the situation.
+This is useful when you use multiple VideoOSD mods together and want a clean way to quickly switch them on or off depending on the situation.
 
 ---
 
