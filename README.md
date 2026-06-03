@@ -5,9 +5,9 @@ Overview of all my Jellyfin Web VideoOSD projects: [Jellyfin-VideoOSD-Projects-O
 # Jellyfin VideoOSD Custom On/Off Menu
 
 This script is the quick-switching control hub for my **Jellyfin VideoOSD addons**.  
-It adds a customizable on/off submenu to the playback menu, letting you quickly enable or disable supported script mods directly during video playback.
+It adds a customizable on/off submenu to the playback menu, letting you quickly enable or disable supported script addons directly during video playback.
 
-Supported mods:
+Supported script addons:
 
 - [Artwork on OSD](https://github.com/chrissix666/Jellyfin-VideoOSD-Artwork-Display)
 - [Speed Buttons](https://github.com/chrissix666/Jellyfin-VideoOSD-CustomPlaybackSpeed-Buttons)
