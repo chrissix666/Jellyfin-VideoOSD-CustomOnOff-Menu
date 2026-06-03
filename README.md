@@ -79,13 +79,11 @@ If no compatible addon is installed or registered, the menu shows a small empty-
 
 2. Paste the content of the Custom On/Off Menu script into the injector.
 
-3. Make sure this menu script loads **before** the supported OSD addon scripts when possible.
-
-4. Paste or enable the supported OSD addon scripts.
+4. Paste or enable the supported addon scripts.
 
 5. Save and reload Jellyfin Web.
 
-6. Start video playback and open the VideoOSD menu.
+6. Start video playback.
 
 ---
 
