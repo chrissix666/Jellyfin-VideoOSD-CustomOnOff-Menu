@@ -6,135 +6,96 @@ Overview of all my Jellyfin Web VideoOSD projects: [Jellyfin-VideoOSD-Projects-O
 
 ---
 
-# Jellyfin VideoOSD Custom On/Off Menu
+Note: This script is compatible with the [Jellyfin-VideoOSD-CustomOnOff-Menu](https://github.com/chrissix666/Jellyfin-VideoOSD-CustomOnOff-Menu).
 
-This script is the quick-switching control hub for my **Jellyfin VideoOSD addons**.  
-It adds a customizable on/off submenu to the playback menu, letting you quickly enable or disable supported script addons directly during video playback.
-
-Supported script addons:
-
-- [Artwork on OSD](https://github.com/chrissix666/Jellyfin-VideoOSD-Artwork-Display)
-- [Speed Buttons](https://github.com/chrissix666/Jellyfin-VideoOSD-CustomPlaybackSpeed-Buttons)
-- [FrameByFrame Buttons](https://github.com/chrissix666/Jellyfin-VideoOSD-FrameByFrame-Buttons)
-- [Download Button](https://github.com/chrissix666/Jellyfin-VideoOSD-Download-Button)
-- [Screenshot Button](https://github.com/chrissix666/Jellyfin-VideoOSD-Screenshot-Button)
-
-Supported scripts addons can register themselves in the menu and can then be enabled or disabled without editing code or reloading Jellyfin Web.
-
-Tested on & Requirements: Windows 11, Chrome, Jellyfin Web 10.10.7, JavaScript Injector.
-
-<img src="Screenshot-Main.png" width="300">
-<img src="Screenshot-Sub.png" width="300">
+# Jellyfin VideoOSD A-B Loop Button
 
 ---
 
-## Features
+Tested on Windows 11 on Chrome:
 
-- Adds a **Customs** submenu to the Jellyfin playback settings menu.
-- Shows supported script addons in one compact on/off list.
-- Uses checkmarks to show which script addons are currently enabled.
-- Stores addon states locally in the browser.
-- Compatible addon scripts can register automatically through the shared Custom Menu integration.
-- Uses Jellyfin-like ActionSheet styling for a native-looking popup.
-- Works fully client-side, without backend changes.
+Adds an **A-B loop** button directly to the VideoOSD in Jellyfin Web.
+Mark two points on the timeline and the video loops endlessly between them — just like VLC's own A-B repeat.
+No menu diving. No playback interruption. Just click, click, and it loops.
 
 ---
 
-## What This Script Does
-
-The Custom On/Off Menu is not a visual effect or playback feature by itself.  
-It is a small control layer for other VideoOSD script addons.
-
-Instead of editing script addons manually whenever you want to hide or show a button, artwork overlay, or other VideoOSD element, you can toggle supported script addons directly from the playback settings menu.
-
-This is useful when you use multiple VideoOSD script addons together and want a clean way to quickly switch them on or off depending on the situation.
+[![VideoOSD A-B Loop Button](https://github.com/chrissix666/Jellyfin-VideoOSD-ABLoop-Button/raw/main/Screenshot.png)](/chrissix666/Jellyfin-VideoOSD-ABLoop-Button/blob/main/Screenshot.png)
 
 ---
 
-## Supported Addons
+## What It Does
 
-This menu is designed for VideoOSD script addons that include Custom Menu integration.
+- Injects an **A-B loop button** into the VideoOSD interface, right after the native playback controls
+- First click sets point **A** at the current position
+- Second click sets point **B** and the loop starts immediately
+- Third click clears the loop and resets to the start
+- Letters light up in Jellyfin's own accent color as each point is set
+- Automatically resets when switching to a different video
 
-Currently supported:
+---
 
-- **Artwork OSD**  
-  Enables or disables the VideoOSD artwork overlay.
+## How It Works
 
-- **Speed Buttons**  
-  Enables or disables the custom playback speed step buttons.
+The script:
 
-- **FrameByFrame Buttons**  
-  Enables or disables frame stepping buttons for precise paused playback navigation.
+1. Reads the current playback position from the `<video>` element to set point A and point B
+2. Attaches a `timeupdate` listener that jumps back to point A once playback reaches point B
+3. Uses a `MutationObserver` to:
+   - Detect the VideoOSD transport bar
+   - Insert the button right after the native playback controls
+   - Keep the button pinned in position, even if other custom OSD buttons load afterwards
 
-- **Download Button**  
-  Enables or disables the download button.
+---
 
-- **Screenshot Button**  
-  Enables or disables the screenshot button.
+## Why It's Useful
 
-If no compatible script addon is installed or registered, the menu shows a small empty-state message.
+Normally, repeating a short section of a video means manually seeking back and forth every time it ends.
+
+This script:
+
+- Loops a section endlessly without touching the seek bar again
+- Keeps the loop controls directly inside the player UI
+- Works alongside other custom OSD buttons like Speed or FrameByFrame without crowding the layout
+
+It's especially useful for rewatching a scene, practicing along to a clip, or studying a short segment repeatedly.
 
 ---
 
 ## Installation
 
-1. If not already present, install a JavaScript injector plugin or userscript manager  
-   (Jellyfin JavaScript Injector, Tampermonkey, Violentmonkey, or similar).
+### Method: Jellyfin JavaScript Injector
 
-2. Paste the content of the Custom On/Off Menu script addon into the injector.
+1. Install the **JavaScript Injector** plugin in Jellyfin (if not already installed).
+2. Open Jellyfin Admin Dashboard.
+3. Go to: Dashboard → Plugins → JavaScript Injector
+4. Paste the entire script content into the injector.
+5. Save.
+6. Refresh the Jellyfin web interface.
 
-4. Paste or enable the supported script addons you want to use.
-
-5. Save and reload Jellyfin Web.
-
-6. Start video playback.
-
----
-
-## Behavior
-
-The script creates a shared Custom Menu integration for supported VideoOSD script addons.
-
-Compatible script addons can register themselves with the menu.  
-Each registered script addons appears as a toggle entry in the submenu.
-
-When a script addon is enabled or disabled:
-
-- The state is saved locally in the browser.
-- The script addons own enable or disable behavior is triggered.
-- The checkmark updates immediately.
-- No Jellyfin server setting is changed.
-- No backend interaction is required.
+The A-B loop button will now appear in the VideoOSD.
 
 ---
 
-## Storage
+## Configuration
 
-Script addons states are saved locally in the browser.
+All behavior is controlled via the `CONFIG` object at the top of the script:
 
-This means the settings are browser-local and user-local.  
-Clearing browser storage may reset the menu states.
-
----
-
-## Notes and Limitations
-
-- This menu only controls script addons that support this menu integration.
-- It does not modify Jellyfin server settings.
-- It does not install or remove addon scripts.
-- It only enables or disables already loaded compatible script addons.
-- If a compatible script addon is used without this menu integration, it can still run standalone as always on.
+- `spacingMode` — `'seamless'` (no other custom OSD buttons installed) or `'balanced'` (used together with Speed / FrameByFrame or other injected custom buttons)
+- `symmetricExtraGapEm` — target gap in em applied to both sides when using `balanced` mode
+- `hideOnNarrowWindow` — mimics Jellyfin's own vanilla window-width behavior, auto-hides this button below 50em window width
 
 ---
 
-## Tested On
+## Compatibility
 
-- Jellyfin Web 10.10.7
-- Google Chrome
-- Windows 11
+- Designed for Jellyfin Web (Windows 11, Chrome)
+- Only tested on 10.10.7 Web version (Icon injection may vary)
+- Works with dynamic page navigation
+- Desktop web browsers only — mobile, TV, and native app wrappers are intentionally excluded
 
 ---
 
 ## License
 
-MIT
+MIT License
