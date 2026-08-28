@@ -808,6 +808,20 @@
         ensureApi();
         ensureStyles();
 
+        // Nothing to show if every addon is currently disabled (either by
+        // its own admin toggle server-side, meaning its script was never
+        // even delivered to the browser, or if none have registered yet
+        // for any other reason). By the time this runs (triggered by the
+        // user actually opening Jellyfin's own "..." menu, well after
+        // player/page load), every currently-enabled addon has already
+        // had its chance to call registerAddon(), so this is a reliable
+        // check, not a race condition against addons that simply haven't
+        // registered yet. Skips the whole entry point rather than showing
+        // it and opening to an empty "No Customs installed" placeholder.
+        if (window[API_NAME].getAddons().length === 0) {
+            return false;
+        }
+
         const statsButton = document.querySelector(
             '.actionSheetScroller .actionSheetMenuItem[data-id="stats"]'
         );
