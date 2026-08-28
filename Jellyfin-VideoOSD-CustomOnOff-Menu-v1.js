@@ -1,6 +1,55 @@
 (function () {
     'use strict';
 
+    // ---- PLUGIN ADAPTER: config source, retrofit for VideoOSD Tweaks and Candy ----
+    // Unlike the other 7 mods, this one has almost nothing left to adapt:
+    // the actual enable/disable-per-mod decision (which used to be a
+    // concern here) is now handled entirely at the C# plugin level
+    // (Plugin.cs conditionally includes/excludes each mod's own <script>
+    // tag based on its EnableXxx setting), so this script's own
+    // registerAddon()/isAddonEnabled()/setAddonEnabled() logic below is
+    // completely untouched -- it still just reads/writes localStorage
+    // exactly as before, for whichever mods actually got loaded. The only
+    // genuinely new capability here is the popup list's own sort order.
+    const PLUGIN_GUID = '468b1980-7a6c-4e45-a129-24825085ece4';
+
+    // ============================================================
+    // == SHARED VALUE (both standalone and plugin usage) ==
+    // 'alphabetical' reproduces the exact original (and only) sort
+    // behavior. 'custom' is the new capability, using customOrder below.
+    // Both fields are plain local values, editable by hand for a
+    // standalone user exactly like the plugin can set them.
+    // ============================================================
+    let sortMode = 'alphabetical';
+    let customOrder = [];
+
+    async function fetchPluginConfig() {
+        if (!window.ApiClient || typeof ApiClient.getPluginConfiguration !== 'function') {
+            return null;
+        }
+        try {
+            return await ApiClient.getPluginConfiguration(PLUGIN_GUID);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function applyPluginConfig(pluginConfig) {
+        if (!pluginConfig) return;
+
+        if (typeof pluginConfig.CustomsMenuSortMode === 'string') {
+            sortMode = pluginConfig.CustomsMenuSortMode;
+        }
+        if (typeof pluginConfig.CustomsMenuCustomOrder === 'string' && pluginConfig.CustomsMenuCustomOrder) {
+            customOrder = pluginConfig.CustomsMenuCustomOrder
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean);
+        }
+    }
+    // ---- END PLUGIN ADAPTER ----
+
+
     const CUSTOMS_ID = 'jvosd-customs';
     const ITEM_HEIGHT_REM = 2.7;
     const DONE = new WeakSet();
@@ -487,17 +536,39 @@
             },
 
             getAddons() {
-                return Array
-                    .from(addons.values())
-                    .sort((a, b) =>
-                        a.name.localeCompare(
-                            b.name,
-                            undefined,
-                            {
-                                sensitivity: 'base'
-                            }
-                        )
-                    );
+                const all = Array.from(addons.values());
+
+                // CHANGED: was always alphabetical before this retrofit.
+                // Now supports an admin-defined custom order too (see
+                // PLUGIN ADAPTER above). Any addon not present in
+                // customOrder falls back to alphabetical position among
+                // the other unlisted ones, so a newly added mod the admin
+                // hasn't manually placed yet still shows up sensibly
+                // instead of silently vanishing from the list.
+                if (sortMode === 'custom' && customOrder.length) {
+                    const orderIndex = new Map(customOrder.map((id, idx) => [id, idx]));
+
+                    return all.sort((a, b) => {
+                        const hasA = orderIndex.has(a.id);
+                        const hasB = orderIndex.has(b.id);
+
+                        if (hasA && hasB) return orderIndex.get(a.id) - orderIndex.get(b.id);
+                        if (hasA) return -1;
+                        if (hasB) return 1;
+
+                        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+                    });
+                }
+
+                return all.sort((a, b) =>
+                    a.name.localeCompare(
+                        b.name,
+                        undefined,
+                        {
+                            sensitivity: 'base'
+                        }
+                    )
+                );
             }
         };
     }
@@ -800,5 +871,16 @@
     });
 
     injectCustomsMenuEntry();
+
+    // ---- PLUGIN ADAPTER: apply fetched config once it arrives ----
+    // Low time-pressure here compared to the other mods' own adapters:
+    // the popup only ever renders once a user actively opens it (clicks
+    // "Customs" in the settings menu), which in practice always happens
+    // well after this async fetch has had time to resolve, no dual-mode
+    // branch or awaited startup gating needed for this one.
+    fetchPluginConfig().then(function (pluginConfig) {
+        applyPluginConfig(pluginConfig);
+    });
+    // ---- END PLUGIN ADAPTER ----
 
 })();
