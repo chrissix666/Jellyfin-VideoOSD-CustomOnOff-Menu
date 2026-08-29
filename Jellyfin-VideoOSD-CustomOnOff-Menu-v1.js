@@ -900,6 +900,8 @@
     // branch or awaited startup gating needed for this one.
     fetchPluginConfig().then(function (pluginConfig) {
         applyPluginConfig(pluginConfig);
+    }).catch(function (err) {
+        console.error('[VideoOSD CustomOnOff Menu] config apply failed:', err);
     });
     // ---- END PLUGIN ADAPTER ----
 
