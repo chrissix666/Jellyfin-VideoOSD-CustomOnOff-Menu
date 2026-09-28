@@ -27,11 +27,38 @@
         const maxAttempts = 120;
         const delayMs = 250;
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            // No ApiClient yet (jellyfin-web creates it once a server is
+            // known, e.g. after the server selection page): wait without
+            // using up an attempt, like the not-logged-in case below.
+            if (!window.ApiClient) attempt--;
             if (window.ApiClient && typeof ApiClient.getPluginConfiguration === 'function') {
+                // Not logged in yet (e.g. still on the login page): every
+                // request would only fail with 401, so wait without using up
+                // an attempt (the whole budget used to run out right there).
+                if (typeof ApiClient.accessToken === 'function' && !ApiClient.accessToken()) {
+                    attempt--;
+                    await new Promise(function (resolve) { setTimeout(resolve, delayMs); });
+                    continue;
+                }
                 try {
-                    const config = await ApiClient.getPluginConfiguration(PLUGIN_GUID);
+                    // The plugin's own endpoint (1.0.1.0+) is readable for every
+                    // signed-in user; Jellyfin's plugin configuration endpoint
+                    // is admin-only. Older plugin versions answer 404 there, then
+                    // the admin-only endpoint is used as before.
+                    let config;
+                    try {
+                        config = await ApiClient.getJSON(ApiClient.getUrl('VideoOSDTweaksCandy/ClientConfiguration'));
+                    } catch (endpointErr) {
+                        if (!(endpointErr && endpointErr.status === 404)) throw endpointErr;
+                        config = await ApiClient.getPluginConfiguration(PLUGIN_GUID);
+                    }
                     if (config) return config;
                 } catch (err) {
+                    // 403: the configuration endpoint is admin-only; 404: plugin
+                    // not installed (standalone use). Retrying can't change
+                    // either, so stop and use the defaults instead of sending
+                    // up to 120 failing requests.
+                    if (err && (err.status === 403 || err.status === 404)) return null;
                     // fall through, try again after the delay below
                 }
             }
@@ -71,6 +98,9 @@
 
     let pendingCustomsContext = null;
     let closingEverything = false;
+    // Removes the document-level outside-click listeners of the open
+    // popup (set in openCustomsMenu()); null while no popup is open.
+    let removeOutsideListeners = null;
 
     function getItemHeight() {
         const rootFontSize =
@@ -192,6 +222,16 @@
                 background-color: rgba(255,255,255,.14) !important;
             }
 
+            /*
+             * Keyboard / remote focus must be visible (same look as the
+             * mouse hover). :focus-visible only matches for keyboard
+             * navigation, so mouse use keeps looking exactly as before.
+             */
+            .jvosd-customs-popup.jvosd-customs-popup .jvosd-customs-addon-item:focus-visible {
+                background: rgba(255,255,255,.14) !important;
+                background-color: rgba(255,255,255,.14) !important;
+            }
+
             .jvosd-customs-popup .jvosd-customs-addon-item:hover:focus,
             .jvosd-customs-popup .jvosd-customs-addon-item:hover:focus-visible,
             .jvosd-customs-popup .jvosd-customs-addon-item:hover:active,
@@ -309,6 +349,15 @@
         const keepBackdrop = !!options.keepBackdrop;
         const animate = !!options.animate;
 
+        // The outside-click listeners used to be removed only by an
+        // outside click itself. Any other close (Escape/back, leaving the
+        // OSD) left them armed, and the next click anywhere was swallowed
+        // and closed an unrelated menu.
+        if (removeOutsideListeners) {
+            removeOutsideListeners();
+            removeOutsideListeners = null;
+        }
+
         const popups = Array.from(
             document.querySelectorAll('.jvosd-customs-popup')
         );
@@ -365,6 +414,30 @@
         }
 
         sheet.dataset.jvosdClosing = 'true';
+
+        // FIX: close the sheet through Jellyfin's own dialog path when
+        // possible. Its dialogs with history (the default) close on
+        // history.back() via dialogHelper, which also pops the dialog's
+        // focus scope (focusManager.popScope). The simulated close below
+        // skipped that, leaving a detached element as the default focus
+        // scope, so keyboard/remote navigation found nothing to focus
+        // afterwards. The simulated close stays as the fallback when the
+        // sheet's history entry isn't there.
+        const historyState = window.history.state || {};
+        const openDialogs = (historyState.usr && historyState.usr.dialogs) || historyState.dialogs || [];
+        if (sheet.getAttribute('data-history') === 'true' && openDialogs.length) {
+            return new Promise(resolve => {
+                let finished = false;
+                const finish = () => {
+                    if (finished) return;
+                    finished = true;
+                    resolve();
+                };
+                sheet.addEventListener('close', finish, { once: true });
+                setTimeout(finish, VANILLA_ACTIONSHEET_EXIT_MS + 400);
+                window.history.back();
+            });
+        }
 
         sheet.dispatchEvent(new CustomEvent('closing', {
             bubbles: false,
@@ -725,22 +798,70 @@
                     check.classList.toggle('is-off', !nextState);
                 }
 
-                moveFocusToPopup(button);
+                // Keyboard/remote activation (Enter) reports detail 0:
+                // keep focus on the entry so navigation can continue.
+                if (event.detail !== 0) moveFocusToPopup(button);
             });
         });
 
+        // Keyboard / TV remote support: the first entry gets focus on
+        // open (the popup itself only took focus after a click before, so
+        // arrow keys still drove the hidden OSD controls behind it), the
+        // arrow keys move between entries, and Escape / the back key
+        // closes the popup like Jellyfin's own menus. Handled keys don't
+        // propagate, so they don't also trigger OSD shortcuts.
+        const itemButtons = () => Array.from(popup.querySelectorAll('.jvosd-customs-addon-item'));
+
+        requestAnimationFrame(() => {
+            const first = itemButtons()[0];
+            if (!first || !popup.isConnected) return;
+            try {
+                first.focus({ preventScroll: true });
+            } catch {
+                first.focus();
+            }
+        });
+
+        popup.addEventListener('keydown', event => {
+            // No key pressed inside the menu may reach Jellyfin's OSD
+            // shortcuts behind it (left/right used to seek and move focus
+            // out of the menu, space to pause). Enter/space still
+            // activate the focused entry natively.
+            event.stopPropagation();
+
+            const key = event.key;
+            const isBack = key === 'Escape' || key === 'Backspace' || key === 'BrowserBack' || key === 'GoBack' ||
+                event.keyCode === 461 || event.keyCode === 10009;
+
+            if (isBack) {
+                event.preventDefault();
+                event.stopPropagation();
+                closeCustomsPopupAndVanillaActionSheet();
+                return;
+            }
+
+            if (key === 'ArrowDown' || key === 'ArrowUp') {
+                const items = itemButtons();
+                if (!items.length) return;
+                const current = items.indexOf(document.activeElement);
+                const next = key === 'ArrowDown'
+                    ? Math.min(items.length - 1, current + 1)
+                    : Math.max(0, current - 1);
+                event.preventDefault();
+                event.stopPropagation();
+                items[next].focus();
+            }
+        });
+
         setTimeout(() => {
+            if (!popup.isConnected) return;
+
             const outside = event => {
                 if (!popup.contains(event.target)) {
                     event.preventDefault();
                     event.stopImmediatePropagation();
 
                     closeCustomsPopupAndVanillaActionSheet();
-
-                    document.removeEventListener('pointerdown', outside, true);
-                    document.removeEventListener('mousedown', outside, true);
-                    document.removeEventListener('touchstart', outside, true);
-                    document.removeEventListener('click', outside, true);
                 }
             };
 
@@ -748,6 +869,13 @@
             document.addEventListener('mousedown', outside, true);
             document.addEventListener('touchstart', outside, true);
             document.addEventListener('click', outside, true);
+
+            removeOutsideListeners = () => {
+                document.removeEventListener('pointerdown', outside, true);
+                document.removeEventListener('mousedown', outside, true);
+                document.removeEventListener('touchstart', outside, true);
+                document.removeEventListener('click', outside, true);
+            };
         }, 0);
     }
 
@@ -876,6 +1004,14 @@
     }
 
     ensureApi();
+
+    // Leaving the video page (playback ended, back navigation) used to
+    // leave the popup and its backdrop on top of the next page.
+    document.addEventListener('pagehide', event => {
+        if (event.target && event.target.id === 'videoOsdPage') {
+            closeCustomsPopup();
+        }
+    });
 
     const observer = new MutationObserver(() => {
         document
