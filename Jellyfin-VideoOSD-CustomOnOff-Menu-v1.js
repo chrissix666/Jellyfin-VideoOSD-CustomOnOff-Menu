@@ -172,6 +172,16 @@
                 outline: none;
             }
 
+            .jvosd-customs-popup.jvosd-customs-popup-tv {
+                top: 0;
+                left: 0;
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: none;
+                height: 100%;
+                border-radius: 0 !important;
+            }
+
             .jvosd-customs-popup.is-closing {
                 animation: scaledown ${VANILLA_ACTIONSHEET_EXIT_MS}ms ease-out normal both;
             }
@@ -790,11 +800,17 @@
          * Diese Klassen holen das Custom-Submenu näher an Jellyfins eigenes
          * ActionSheet/Dialog-Styling heran.
          */
-        popup.className =
-            'focuscontainer dialog actionsheet-not-fullscreen actionSheet jvosd-customs-popup';
+        // TV layout: Jellyfin's own sheets are fullscreen there
+        // (actionSheet.ts size 'fullscreen'); the popup takes the same
+        // classes instead of the position of the sheet it replaces.
+        const tvLayout = document.documentElement.classList.contains('layout-tv');
+
+        popup.className = tvLayout
+            ? 'focuscontainer dialog dialog-fixedSize dialog-fullscreen actionsheet-fullscreen actionSheet jvosd-customs-popup jvosd-customs-popup-tv'
+            : 'focuscontainer dialog actionsheet-not-fullscreen actionSheet jvosd-customs-popup';
 
         popup.tabIndex = -1;
-        popup.style.left = `${originalRect.left}px`;
+        if (!tvLayout) popup.style.left = `${originalRect.left}px`;
 
         const itemsHtml = registeredAddons.length
             ? registeredAddons.map(createAddonButtonHtml).join('')
@@ -829,14 +845,20 @@
 
         document.body.appendChild(popup);
 
-        sizePopupRowsToFullWidth(popup);
+        if (tvLayout) {
+            popup.querySelectorAll('.jvosd-customs-addon-item').forEach(item => {
+                item.classList.add('listItem-focusscale');
+            });
+        } else {
+            sizePopupRowsToFullWidth(popup);
 
-        fitPopupLikeVanilla(
-            popup,
-            originalRect,
-            originalCount,
-            newCount
-        );
+            fitPopupLikeVanilla(
+                popup,
+                originalRect,
+                originalCount,
+                newCount
+            );
+        }
 
         activateCustomsBackdropLikeVanilla(backdrop);
 
