@@ -474,10 +474,88 @@
         });
     }
 
+    // Browser back closes the popup like Jellyfin's own menus: the popup
+    // gets its own history entry, written the way Jellyfin's dialogHelper
+    // writes one (history state usr.dialogs, same URL), in 10.10 and 12.1
+    // alike. Without it, back left the whole video page. Closing the popup
+    // any other way removes the entry again. Each entry carries its own
+    // token, so it is recognised by identity, not by the dialog hash.
+    const POPUP_HISTORY_HASH = '#jvosd-customs';
+    let popupHistoryActive = false;
+    let popupHistoryToken = null;
+
+    function historyToken() {
+        const state = window.history.state || {};
+        return (state.usr && state.usr.jvosdCustoms) || null;
+    }
+
+    function pushPopupHistory() {
+        if (popupHistoryActive) return;
+
+        const state = window.history.state || {};
+        const usr = state.usr || {};
+        const token = Math.random().toString(36).slice(2, 10);
+        const next = Object.assign({}, state, {
+            usr: Object.assign({}, usr, {
+                dialogs: (usr.dialogs || []).concat(POPUP_HISTORY_HASH),
+                jvosdCustoms: token
+            }),
+            key: token
+        });
+        if (typeof state.idx === 'number') next.idx = state.idx + 1;
+
+        window.history.pushState(next, '', window.location.href);
+        popupHistoryToken = token;
+        popupHistoryActive = true;
+    }
+
+    function popPopupHistory() {
+        if (!popupHistoryActive) return;
+
+        popupHistoryActive = false;
+        if (historyToken() === popupHistoryToken) window.history.back();
+        popupHistoryToken = null;
+    }
+
+    window.addEventListener('popstate', () => {
+        const token = historyToken();
+
+        if (popupHistoryActive) {
+            if (token === popupHistoryToken) return;
+
+            // The entry is gone (browser back): close without going back again.
+            popupHistoryActive = false;
+            popupHistoryToken = null;
+            closeCustomsPopupAndVanillaActionSheet();
+
+            // Jellyfin leaves the video page itself with one history step
+            // when playback ends (appRouter.back()); with the popup open
+            // that step only removed this entry. Repeat it once the video
+            // is over, so the ended video page isn't left on screen.
+            setTimeout(() => {
+                const video = document.querySelector('video');
+                if (window.location.hash.indexOf('#/video') === 0 &&
+                    (!video || video.ended || !video.currentSrc)) {
+                    window.history.back();
+                }
+            }, 300);
+            return;
+        }
+
+        // Landed on an entry of a popup that is no longer open (left behind
+        // by a navigation while it was open, or reached with Forward): it
+        // is the same page without the popup, so step over it.
+        if (token && !document.querySelector('.jvosd-customs-popup:not(.is-closing)')) {
+            window.history.back();
+        }
+    });
+
     function closeCustomsPopupAndVanillaActionSheet() {
         if (closingEverything) return;
 
         closingEverything = true;
+
+        popPopupHistory();
 
         closeCustomsPopup({
             animate: true
@@ -762,6 +840,8 @@
 
         activateCustomsBackdropLikeVanilla(backdrop);
 
+        pushPopupHistory();
+
         registeredAddons.forEach(addon => {
             const selector = `button[data-id="${escapeCssValue(addon.id)}"]`;
             const button = popup.querySelector(selector);
@@ -1009,6 +1089,7 @@
     // leave the popup and its backdrop on top of the next page.
     document.addEventListener('pagehide', event => {
         if (event.target && event.target.id === 'videoOsdPage') {
+            popupHistoryActive = false;
             closeCustomsPopup();
         }
     });
