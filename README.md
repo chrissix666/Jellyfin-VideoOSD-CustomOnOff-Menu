@@ -22,7 +22,7 @@ Supported script addons:
 
 Supported scripts addons can register themselves in the menu and can then be enabled or disabled without editing code or reloading Jellyfin Web.
 
-Tested on & Requirements: Windows 11, Chrome, Jellyfin Web 10.10.7, JavaScript Injector.
+Tested on & Requirements: Windows 11, Chrome, Jellyfin Web 10.10.7 and 12.0+, JavaScript Injector.
 
 <img src="Screenshot-Main.png" width="300">
 <img src="Screenshot-Sub.png" width="300">
@@ -133,7 +133,7 @@ Clearing browser storage may reset the menu states.
 
 ## Tested On
 
-- Jellyfin Web 10.10.7
+- Jellyfin Web 10.10.7 and 12.0+
 - Google Chrome
 - Windows 11
 
