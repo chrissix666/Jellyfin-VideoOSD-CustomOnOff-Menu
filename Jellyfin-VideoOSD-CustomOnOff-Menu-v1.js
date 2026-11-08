@@ -1,23 +1,18 @@
 (function () {
     'use strict';
 
-    // ---- PLUGIN ADAPTER: config source, retrofit for VideoOSD Tweaks and Candy ----
-    // Unlike the other 7 mods, this one has almost nothing left to adapt:
-    // the actual enable/disable-per-mod decision (which used to be a
-    // concern here) is now handled entirely at the C# plugin level
-    // (Plugin.cs conditionally includes/excludes each mod's own <script>
-    // tag based on its EnableXxx setting), so this script's own
-    // registerAddon()/isAddonEnabled()/setAddonEnabled() logic below is
-    // completely untouched -- it still just reads/writes localStorage
-    // exactly as before, for whichever mods actually got loaded. The only
-    // genuinely new capability here is the popup list's own sort order.
+    // ---- PLUGIN ADAPTER: config source (VideoOSD Tweaks and Candy) ----
+    // Whether a mod is loaded at all is decided by the plugin
+    // (Plugin.cs includes each mod's <script> tag only when its
+    // EnableXxx setting is on). registerAddon()/isAddonEnabled()/
+    // setAddonEnabled() below only read/write localStorage for the mods
+    // that did load. The plugin config only sets the popup's sort order.
 
     // ============================================================
     // == SHARED VALUE (both standalone and plugin usage) ==
-    // 'alphabetical' reproduces the exact original (and only) sort
-    // behavior. 'custom' is the new capability, using customOrder below.
-    // Both fields are plain local values, editable by hand for a
-    // standalone user exactly like the plugin can set them.
+    // 'alphabetical' (default) or 'custom', using customOrder below.
+    // Both are plain local values, so standalone use can edit them by
+    // hand just like the plugin sets them.
     // ============================================================
     let sortMode = 'alphabetical';
     let customOrder = [];
@@ -34,7 +29,7 @@
             if (window.ApiClient && typeof ApiClient.getJSON === 'function') {
                 // Not logged in yet (e.g. still on the login page): every
                 // request would only fail with 401, so wait without using up
-                // an attempt (the whole budget used to run out right there).
+                // an attempt.
                 if (typeof ApiClient.accessToken === 'function' && !ApiClient.accessToken()) {
                     attempt--;
                     await new Promise(function (resolve) { setTimeout(resolve, delayMs); });
@@ -47,13 +42,13 @@
                     throw new Error('empty configuration');
                 } catch (err) {
                     // 403: no access; 404: plugin not installed (standalone
-                    // use). Retrying can't change
-                    // either, so stop and use the defaults instead of sending
-                    // up to 120 failing requests.
+                    // use). Retrying can't change either, so stop and use
+                    // the defaults instead of sending up to 120 failing
+                    // requests.
                     if (err && (err.status === 403 || err.status === 404)) return null;
                     // Server error (5xx), network error or empty answer: at most 3
                     // retries, 0.5 / 1 / 2 s apart, then the defaults until the next
-                    // fetch (this used to send up to 120 requests in 30 s).
+                    // fetch.
                     if (++failures > 3) return null;
                     await new Promise(function (resolve) { setTimeout(resolve, delayMs * Math.pow(2, failures)); });
                     continue;
@@ -146,11 +141,11 @@
             }
 
             /*
-             * Das Popup bekommt zusätzlich Jellyfin/Vanilla-Klassen:
+             * The popup also carries Jellyfin's own classes:
              * focuscontainer dialog actionsheet-not-fullscreen actionSheet
              *
-             * Deshalb hier KEIN hartes background/color setzen.
-             * Jellyfins Theme soll den ActionSheet-Look liefern.
+             * So no fixed background/color here: the Jellyfin theme
+             * supplies the action sheet look.
              */
             .jvosd-customs-popup {
                 position: fixed;
@@ -200,9 +195,9 @@
             }
 
             /*
-             * Checked-State und Hover-State sind hier bewusst getrennt:
-             * Aktivierte Addons bekommen keinen eigenen Hintergrund.
-             * Der Hintergrund gehört ausschließlich dem echten Maus-Hover.
+             * Checked and hover state are kept apart on purpose:
+             * enabled addons get no background of their own, the
+             * background belongs to the real mouse hover only.
              */
             .jvosd-customs-popup .jvosd-customs-addon-item,
             .jvosd-customs-popup .jvosd-customs-addon-item:focus,
@@ -232,7 +227,7 @@
             /*
              * Keyboard / remote focus must be visible (same look as the
              * mouse hover). :focus-visible only matches for keyboard
-             * navigation, so mouse use keeps looking exactly as before.
+             * navigation, so mouse use looks unchanged.
              */
             .jvosd-customs-popup.jvosd-customs-popup .jvosd-customs-addon-item:focus-visible {
                 background: rgba(255,255,255,.14) !important;
@@ -356,10 +351,10 @@
         const keepBackdrop = !!options.keepBackdrop;
         const animate = !!options.animate;
 
-        // The outside-click listeners used to be removed only by an
-        // outside click itself. Any other close (Escape/back, leaving the
-        // OSD) left them armed, and the next click anywhere was swallowed
-        // and closed an unrelated menu.
+        // Remove the outside-click listeners on every close, not only on
+        // an outside click: left armed after Escape/back or leaving the
+        // OSD, they would swallow the next click anywhere and close an
+        // unrelated menu.
         if (removeOutsideListeners) {
             removeOutsideListeners();
             removeOutsideListeners = null;
@@ -422,14 +417,14 @@
 
         sheet.dataset.jvosdClosing = 'true';
 
-        // FIX: close the sheet through Jellyfin's own dialog path when
+        // Close the sheet through Jellyfin's own dialog path when
         // possible. Its dialogs with history (the default) close on
         // history.back() via dialogHelper, which also pops the dialog's
         // focus scope (focusManager.popScope). The simulated close below
-        // skipped that, leaving a detached element as the default focus
-        // scope, so keyboard/remote navigation found nothing to focus
-        // afterwards. The simulated close stays as the fallback when the
-        // sheet's history entry isn't there.
+        // skips that, leaving a detached element as the default focus
+        // scope, so keyboard/remote navigation finds nothing to focus
+        // afterwards. It stays as the fallback when the sheet's history
+        // entry isn't there.
         const historyState = window.history.state || {};
         const openDialogs = (historyState.usr && historyState.usr.dialogs) || historyState.dialogs || [];
         if (sheet.getAttribute('data-history') === 'true' && openDialogs.length) {
@@ -484,7 +479,7 @@
     // Browser back closes the popup like Jellyfin's own menus: the popup
     // gets its own history entry, written the way Jellyfin's dialogHelper
     // writes one (history state usr.dialogs, same URL), in 10.10 and 12.1
-    // alike. Without it, back left the whole video page. Closing the popup
+    // alike. Without it, back would leave the whole video page. Closing the popup
     // any other way removes the entry again. Each entry carries its own
     // token, so it is recognised by identity, not by the dialog hash.
     const POPUP_HISTORY_HASH = '#jvosd-customs';
@@ -702,13 +697,10 @@
             getAddons() {
                 const all = Array.from(addons.values());
 
-                // CHANGED: was always alphabetical before this retrofit.
-                // Now supports an admin-defined custom order too (see
-                // PLUGIN ADAPTER above). Any addon not present in
-                // customOrder falls back to alphabetical position among
-                // the other unlisted ones, so a newly added mod the admin
-                // hasn't manually placed yet still shows up sensibly
-                // instead of silently vanishing from the list.
+                // Alphabetical, or the admin's custom order (see PLUGIN
+                // ADAPTER above). Addons missing from customOrder come
+                // after the listed ones, sorted alphabetically, so a newly
+                // added mod still shows up before the admin places it.
                 if (sortMode === 'custom' && customOrder.length) {
                     const orderIndex = new Map(customOrder.map((id, idx) => [id, idx]));
 
@@ -793,9 +785,8 @@
         const popup = document.createElement('div');
 
         /*
-         * Wichtiger Fix:
-         * Diese Klassen holen das Custom-Submenu näher an Jellyfins eigenes
-         * ActionSheet/Dialog-Styling heran.
+         * These classes give the Customs submenu Jellyfin's own
+         * ActionSheet/dialog styling.
          */
         // TV layout: Jellyfin's own sheets are fullscreen there
         // (actionSheet.ts size 'fullscreen'); the popup takes the same
@@ -904,8 +895,8 @@
         });
 
         // Keyboard / TV remote support: the first entry gets focus on
-        // open (the popup itself only took focus after a click before, so
-        // arrow keys still drove the hidden OSD controls behind it), the
+        // open (otherwise arrow keys would still drive the hidden OSD
+        // controls behind the popup), the
         // arrow keys move between entries, and Escape / the back key
         // closes the popup like Jellyfin's own menus. Handled keys don't
         // propagate, so they don't also trigger OSD shortcuts.
@@ -923,8 +914,8 @@
 
         popup.addEventListener('keydown', event => {
             // No key pressed inside the menu may reach Jellyfin's OSD
-            // shortcuts behind it (left/right used to seek and move focus
-            // out of the menu, space to pause). Enter/space still
+            // shortcuts behind it (left/right would seek and move focus
+            // out of the menu, space would pause). Enter/space still
             // activate the focused entry natively.
             event.stopPropagation();
 
@@ -1044,8 +1035,8 @@
         // Nothing to show if every addon is currently disabled (either by
         // its own admin toggle server-side, meaning its script was never
         // even delivered to the browser, or if none have registered yet
-        // for any other reason). By the time this runs (triggered by the
-        // user actually opening Jellyfin's own "..." menu, well after
+        // for any other reason). By the time this runs (triggered by
+        // opening Jellyfin's own "..." menu, well after
         // player/page load), every currently-enabled addon has already
         // had its chance to call registerAddon(), so this is a reliable
         // check, not a race condition against addons that simply haven't
@@ -1104,8 +1095,9 @@
 
     ensureApi();
 
-    // Leaving the video page (playback ended, back navigation) used to
-    // leave the popup and its backdrop on top of the next page.
+    // Close the popup when the video page is left (playback ended, back
+    // navigation); otherwise it and its backdrop stay on top of the next
+    // page.
     document.addEventListener('pagehide', event => {
         if (event.target && event.target.id === 'videoOsdPage') {
             popupHistoryActive = false;
@@ -1129,11 +1121,9 @@
     injectCustomsMenuEntry();
 
     // ---- PLUGIN ADAPTER: apply fetched config once it arrives ----
-    // Low time-pressure here compared to the other mods' own adapters:
-    // the popup only ever renders once a user actively opens it (clicks
-    // "Customs" in the settings menu), which in practice always happens
-    // well after this async fetch has had time to resolve, no dual-mode
-    // branch or awaited startup gating needed for this one.
+    // No startup gating needed: the popup only renders when "Customs"
+    // is clicked in the settings menu, which in practice happens well
+    // after this fetch has resolved.
     fetchPluginConfig().then(function (pluginConfig) {
         applyPluginConfig(pluginConfig);
     }).catch(function (err) {
